@@ -33,6 +33,31 @@ public class WarehousesController : ControllerBase
             return NotFound($"Product with id {addProductToWarehouseDto.IdProduct} does not exist");
         }
 
-        return Ok("Created");
+        if (!await _warehouseRepository.DoesOrderExist(
+                addProductToWarehouseDto.IdProduct,
+                addProductToWarehouseDto.Amount,
+                addProductToWarehouseDto.CreatedAt))
+        {
+            return NotFound($"Order for product with id {addProductToWarehouseDto.IdProduct} and amount of  " +
+                            $"{addProductToWarehouseDto.Amount} after {addProductToWarehouseDto.CreatedAt} does not exist!");
+        }
+
+        var orderId = await _warehouseRepository.GetIdOrder(
+            addProductToWarehouseDto.IdProduct,
+            addProductToWarehouseDto.Amount, 
+            addProductToWarehouseDto.CreatedAt);
+        var price = await _warehouseRepository.GetPrice(addProductToWarehouseDto.IdProduct);
+        var pk = await _warehouseRepository.AddProduct(addProductToWarehouseDto, orderId, price);
+
+        return Ok($"Product with id {pk} added");
+    }
+
+    [HttpPost]
+    [Route("/api/Warehouses/procedure")]
+    public async Task<IActionResult> AddProductToWarehouseWithProcedure(AddProductToWarehouseDTO addProductToWarehouseDto)
+    {
+        var pk = await _warehouseRepository.AddProductWithProcedure(addProductToWarehouseDto);
+        
+        return Ok($"Product with id {pk} added");
     }
 }
